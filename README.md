@@ -2,6 +2,7 @@
 ## Overview
 
 This is a Discord bot that integrates with an OpenAI-compatible llama.cpp server running a fine-tuned model called `MistralIndigoMerged-q4_0.gguf` and Indigo's home automation server. When mentioned in a Discord message, the bot can control Indigo devices or respond to queries using the fine-tuned model.
+
 ![Example chat between bot and user](img/indigo.png)
 
 ## Requirements
