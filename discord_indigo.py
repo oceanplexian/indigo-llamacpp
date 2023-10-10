@@ -100,6 +100,7 @@ async def interact_with_indigo(content_json=None):
     print(f"Total Execution Time: {time.time() - start_time:.6f} seconds")
 
 async def create_openai_completion(combined_data):
+    print("Seending completion request to API")
     chat_completion = openai.ChatCompletion.create(
         #deployment_id="deployment-name",
         temperature=0.5,
@@ -109,9 +110,7 @@ async def create_openai_completion(combined_data):
     )
 
     content = chat_completion.choices[0].message.content
-    print("printing content")
-    print(chat_completion.choices[0].message.content)
-    print("/printing content")
+    print("Content receieved from API")
 
     return content
 
@@ -132,25 +131,46 @@ async def on_message(message):
         return
 
     if client.user.mentioned_in(message):
+        # We are not creating an indigo_task because its result is needed immediately
+        query = re.sub('<.*?>', '', message.content).strip()
+        filtered_json_str = await interact_with_indigo()
+
+        combined_data_dict = {
+            "question": query,
+            "devices": json.loads(filtered_json_str)
+        }
+        combined_data_str = json.dumps(combined_data_dict)
+        combined_data = f"\n\n### Instructions:\n{combined_data_str}\n### Response:\n"
+
+        # Start the API task only after indigo task is complete
+        api_task = asyncio.create_task(create_openai_completion(combined_data))
+
+        # # Start a 3-second timer, but don't wait for it yet
+        # sleep_task = asyncio.create_task(asyncio.sleep(3))
+
+        # # Wait for the 3-second timer to complete
+        # await sleep_task
+
         async with message.channel.typing():
-            query = re.sub('<.*?>', '', message.content).strip()
-            filtered_json_str = await interact_with_indigo()
+            print("Starting evaluation")
 
-            # Combine the query and the filtered_json_str into one JSON object
-            combined_data_dict = {
-                "question": query,
-                "devices": json.loads(filtered_json_str)
-            }
-            combined_data_str = json.dumps(combined_data_dict)
+            # This ensures that the typing indicator is shown for at least 1 second
+            min_typing_time = asyncio.create_task(asyncio.sleep(1))
 
-            # Add instruction and response markers
-            combined_data = f"\n\n### Instructions:\n{combined_data_str}\n### Response:\n"
+            try:
+                # Wait for the API task to complete
+                content = await api_task
+            except Exception as api_err:
+                print(f"API task failed: {api_err}")
+                await message.reply("An error occurred with the API", mention_author=False)
+                return
+
+            # Ensure the typing indicator is shown for at least 1 second
+            await min_typing_time
 
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    content = await create_openai_completion(combined_data)
-
                     start_idx = content.find('{')
                     end_idx = content.rfind('}')
                     if start_idx != -1 and end_idx != -1 and start_idx < end_idx:
