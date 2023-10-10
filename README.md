@@ -21,9 +21,9 @@ This is a Discord bot that integrates with an OpenAI-compatible llama.cpp server
    ```
 
 2. Install the required Python packages
-  ```
-  pip install llama-cpp-python
-  ```
+   ```
+   pip install llama-cpp-python
+   ```
 
 3. Launch the llama.cpp server
    ```
