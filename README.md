@@ -15,8 +15,9 @@ This is a Discord bot that integrates with an OpenAI-compatible llama.cpp server
 
 1. Clone the repository
    ```bash
-   git clone <repo-url>
-   cd <repo-directory>```
+   git clone git@github.com:oceanplexian/indigo-llamacpp.git
+   cd indigo-llamacpp
+   ```
 
 2. Install the required Python packages
   ```
